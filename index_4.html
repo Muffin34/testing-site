@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knock Knock, Bachu 💛</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Sacramento&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #e8c070;
+    --gold-bright: #f5d080;
+    --deep: #0a0700;
+    --warm: #1a1000;
+    --cream: #fdf6e3;
+    --dim: rgba(253,246,227,0.6);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+
+  body {
+    background: var(--deep);
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--cream);
+    cursor: default;
+  }
+
+  /* ── CANVAS PARTICLES ── */
+  #particles {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── DOOR SCENE ── */
+  #door-scene {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 60%, #1a1000 0%, #0a0700 70%);
+    transition: opacity 1.2s ease;
+  }
+
+  .scene-label {
+    font-size: .6rem;
+    letter-spacing: .5em;
+    text-transform: uppercase;
+    color: rgba(232,192,112,.45);
+    margin-bottom: 2.5rem;
+    animation: fadeIn 2s ease both 0.5s;
+  }
+
+  /* Door wrapper */
+  .door-wrap {
+    position: relative;
+    width: 200px;
+    height: 320px;
+    perspective: 900px;
+    animation: fadeIn 1.5s ease both 0.8s;
+  }
+
+  /* Door frame */
+  .door-frame {
+    position: absolute;
+    inset: -16px -16px -8px -16px;
+    border: 3px solid rgba(232,192,112,.35);
+    border-radius: 50% 50% 0 0 / 14% 14% 0 0;
+    box-shadow: 0 0 40px rgba(232,192,112,.1), inset 0 0 30px rgba(232,192,112,.04);
+    pointer-events: none;
+  }
+  .door-frame::before {
+    content:'';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(232,192,112,.12);
+    border-radius: 48% 48% 0 0 / 13% 13% 0 0;
+  }
+
+  /* The door itself */
+  .door {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transform-origin: left center;
+    transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .door.open {
+    transform: rotateY(-75deg);
+  }
+
+  /* Door face */
+  .door-face {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, #2a1f08 0%, #1a1200 40%, #221800 100%);
+    border-radius: 2px 2px 0 0;
+    border: 2px solid rgba(232,192,112,.25);
+    box-shadow: inset -8px 0 20px rgba(0,0,0,.5), 2px 0 15px rgba(0,0,0,.8);
+    overflow: hidden;
+  }
+
+  /* Wood grain lines */
+  .door-face::before {
+    content:'';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      175deg,
+      transparent 0px,
+      transparent 18px,
+      rgba(255,200,80,.03) 18px,
+      rgba(255,200,80,.03) 19px
+    );
+  }
+
+  /* Door panels */
+  .door-panel {
+    position: absolute;
+    border: 1px solid rgba(232,192,112,.15);
+    border-radius: 2px;
+    background: rgba(255,200,80,.02);
+    box-shadow: inset 1px 1px 0 rgba(255,255,255,.04), inset -1px -1px 0 rgba(0,0,0,.3);
+  }
+  .panel-top    { top: 18px; left: 16px; right: 16px; height: 100px; }
+  .panel-middle { top: 132px; left: 16px; right: 16px; height: 60px; }
+  .panel-bottom { top: 206px; left: 16px; right: 16px; bottom: 14px; }
+
+  /* Doorknob */
+  .knob-wrap {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .knob {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #f5d080, #a07020);
+    box-shadow: 0 0 8px rgba(232,192,112,.5), inset -2px -2px 4px rgba(0,0,0,.4);
+  }
+  .knob-plate {
+    width: 6px;
+    height: 24px;
+    background: linear-gradient(180deg, #c89040, #806010);
+    border-radius: 3px;
+    box-shadow: inset -1px 0 2px rgba(0,0,0,.4);
+  }
+
+  /* Door back (inside glow) */
+  .door-back {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, #3d2800 0%, #1a1000 60%);
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+  }
+
+  /* Light spill behind door */
+  .door-light {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(255,200,80,.18) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 1s ease 0.8s;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .door.open ~ .door-light { opacity: 1; }
+
+  /* Knock button */
+  .knock-btn {
+    margin-top: 3rem;
+    padding: 1rem 3rem;
+    background: transparent;
+    border: 1px solid rgba(232,192,112,.4);
+    color: var(--gold);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-style: italic;
+    letter-spacing: .2em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all .4s ease;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 1.5s ease both 1.5s;
+  }
+  .knock-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(232,192,112,.1), transparent);
+    opacity: 0;
+    transition: opacity .4s ease;
+  }
+  .knock-btn:hover { border-color: rgba(232,192,112,.8); box-shadow: 0 0 20px rgba(232,192,112,.2); letter-spacing: .3em; }
+  .knock-btn:hover::before { opacity: 1; }
+  .knock-btn:active { transform: scale(.97); }
+
+  .knock-sub {
+    margin-top: 1.2rem;
+    font-size: .65rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: rgba(232,192,112,.3);
+    animation: fadeIn 1.5s ease both 2s;
+  }
+
+  /* ── REVEAL SCENE ── */
+  #reveal-scene {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, #1e1400 0%, #080500 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+    padding: 2rem;
+    text-align: center;
+    overflow-y: auto;
+  }
+  #reveal-scene.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Music note pulse */
+  .music-note {
+    font-size: 2rem;
+    animation: notePulse 2s ease-in-out infinite;
+    margin-bottom: 2rem;
+    opacity: 0;
+    transition: opacity 1s ease 1s;
+    display: block;
+  }
+  #reveal-scene.show .music-note { opacity: 0.6; }
+  @keyframes notePulse {
+    0%, 100% { transform: scale(1) rotate(-5deg); opacity: .5; }
+    50% { transform: scale(1.15) rotate(5deg); opacity: .8; }
+  }
+
+  /* Main headline */
+  .reveal-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 8vw, 5.5rem);
+    font-weight: 700;
+    font-style: italic;
+    background: linear-gradient(135deg, #e8c070 0%, #fdf6e3 50%, #c89040 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(232,192,112,.4));
+    line-height: 1.1;
+    margin-bottom: 1.2rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1s ease 0.5s, transform 1s ease 0.5s;
+  }
+  #reveal-scene.show .reveal-headline { opacity: 1; transform: none; }
+
+  .reveal-sub {
+    font-family: 'Sacramento', cursive;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    color: rgba(232,192,112,.8);
+    margin-bottom: 3rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1s ease 0.9s, transform 1s ease 0.9s;
+  }
+  #reveal-scene.show .reveal-sub { opacity: 1; transform: none; }
+
+  /* Divider */
+  .divider {
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(232,192,112,.5), transparent);
+    margin: 0 auto 3rem;
+    opacity: 0;
+    transition: opacity 1s ease 1.2s;
+  }
+  #reveal-scene.show .divider { opacity: 1; }
+
+  /* Poem */
+  .poem {
+    max-width: 520px;
+    font-size: clamp(1.05rem, 2.8vw, 1.5rem);
+    font-weight: 300;
+    line-height: 2.1;
+    color: rgba(253,246,227,.8);
+    margin-bottom: 3rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1.2s ease 1.4s, transform 1.2s ease 1.4s;
+  }
+  #reveal-scene.show .poem { opacity: 1; transform: none; }
+  .poem em { color: var(--gold-bright); font-style: italic; }
+
+  .poem-line { display: block; }
+  .poem-line.gap { margin-top: 1.2rem; }
+
+  /* Signature */
+  .signature {
+    font-family: 'Sacramento', cursive;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    color: var(--gold);
+    opacity: 0;
+    transition: opacity 1s ease 2.5s;
+  }
+  #reveal-scene.show .signature { opacity: .85; }
+
+  /* Sinatra credit */
+  .sinatra-credit {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: .6rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: rgba(232,192,112,.25);
+    opacity: 0;
+    transition: opacity 1s ease 3s;
+    white-space: nowrap;
+    z-index: 10;
+  }
+  #reveal-scene.show .sinatra-credit { opacity: 1; }
+
+  /* Floating petals */
+  .petal {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1;
+    font-size: 1rem;
+    animation: petalFall linear infinite;
+    opacity: 0;
+  }
+  @keyframes petalFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+    10%  { opacity: .7; }
+    90%  { opacity: .5; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Knock animation */
+  @keyframes knock {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
+  .knocking { animation: knock 0.35s ease 2; }
+
+  /* Shimmer overlay on reveal */
+  .shimmer {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 50%, rgba(232,192,112,.08) 0%, transparent 70%);
+    animation: shimmerPulse 4s ease-in-out infinite;
+  }
+  @keyframes shimmerPulse {
+    0%,100% { opacity: .3; }
+    50% { opacity: .8; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<!-- ── DOOR SCENE ── -->
+<div id="door-scene">
+  <p class="scene-label">✦ 20th March · Dahanu ✦</p>
+
+  <div style="position:relative;">
+    <div class="door-wrap">
+      <div class="door" id="theDoor">
+        <div class="door-face">
+          <div class="door-panel panel-top"></div>
+          <div class="door-panel panel-middle"></div>
+          <div class="door-panel panel-bottom"></div>
+          <div class="knob-wrap">
+            <div class="knob"></div>
+            <div class="knob-plate"></div>
+          </div>
+        </div>
+        <div class="door-back"></div>
+      </div>
+      <div class="door-frame"></div>
+      <div class="door-light"></div>
+    </div>
+  </div>
+
+  <button class="knock-btn" id="knockBtn" onclick="handleKnock()">
+    ✦ &nbsp; Open the Door &nbsp; ✦
+  </button>
+  <p class="knock-sub">tap to open</p>
+</div>
+
+<!-- ── REVEAL SCENE ── -->
+<div id="reveal-scene">
+  <span class="music-note">♪</span>
+
+  <h1 class="reveal-headline">I'm at the Door,<br>My Love.</h1>
+  <p class="reveal-sub">— Your Muffi is here 💛</p>
+
+  <div class="divider"></div>
+
+  <div class="poem">
+    <span class="poem-line">I counted every kilometre,</span>
+    <span class="poem-line">every hour on that train,</span>
+    <span class="poem-line">every late night we stayed awake</span>
+    <span class="poem-line">because <em>neither of us wanted to say goodnight.</em></span>
+    <span class="poem-line gap">And now I am here.</span>
+    <span class="poem-line">No more 687 kilometres between us.</span>
+    <span class="poem-line">No more "miss you" over text.</span>
+    <span class="poem-line gap">Just <em>me,</em> at your door,</span>
+    <span class="poem-line">the way I've been in your life —</span>
+    <span class="poem-line"><em>quietly, completely, yours.</em></span>
+  </div>
+
+  <p class="signature">— Always, Muffi ✨</p>
+
+  <p class="sinatra-credit">♪ &nbsp; Can't Take My Eyes Off You &nbsp;·&nbsp; Frank Sinatra &nbsp; ♪</p>
+</div>
+
+<div class="shimmer" id="shimmer" style="display:none;"></div>
+
+<!-- Frank Sinatra — Can't Take My Eyes Off You (YouTube embed, audio only via iframe trick) -->
+<!-- We use Web Audio API to play a tone, then pull from a royalty-free Sinatra-style embed -->
+<iframe id="ytAudio"
+  src=""
+  allow="autoplay"
+  style="display:none;width:0;height:0;"
+  frameborder="0">
+</iframe>
+
+<script>
+// ── Particle canvas ──
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+const stars = Array.from({length:180}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  r: Math.random() * 1.2 + .3,
+  a: Math.random(),
+  da: (.003 + Math.random() * .007) * (Math.random()>.5?1:-1)
+}));
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  stars.forEach(s => {
+    s.a += s.da;
+    if (s.a > 1 || s.a < 0) s.da *= -1;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(253,246,227,${Math.abs(s.a) * .8})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ── Door knock + open ──
+let knocked = false;
+let opened = false;
+
+function handleKnock() {
+  if (opened) return;
+
+  const door = document.getElementById('theDoor');
+  const btn = document.getElementById('knockBtn');
+
+  if (!knocked) {
+    // First click — knock animation
+    knocked = true;
+    door.classList.add('knocking');
+    btn.textContent = '✦  Come in, Muffi...  ✦';
+    btn.style.borderColor = 'rgba(232,192,112,.8)';
+    btn.style.boxShadow = '0 0 25px rgba(232,192,112,.3)';
+    setTimeout(() => door.classList.remove('knocking'), 800);
+    return;
+  }
+
+  // Second click — open the door
+  opened = true;
+  door.classList.add('open');
+  btn.style.opacity = '0';
+  btn.style.pointerEvents = 'none';
+
+  // Spawn petals
+  spawnPetals();
+
+  // After door opens, fade to reveal
+  setTimeout(() => {
+    document.getElementById('door-scene').style.opacity = '0';
+    document.getElementById('door-scene').style.pointerEvents = 'none';
+
+    setTimeout(() => {
+      document.getElementById('door-scene').style.display = 'none';
+      const rev = document.getElementById('reveal-scene');
+      rev.classList.add('show');
+      document.getElementById('shimmer').style.display = 'block';
+
+      // Play music via YouTube embed (Sinatra - Can't Take My Eyes Off You)
+      const iframe = document.getElementById('ytAudio');
+      iframe.src = 'https://www.youtube.com/embed/pHCdS7O248A?autoplay=1&start=18&controls=0&loop=1&playlist=pHCdS7O248A';
+
+    }, 1200);
+  }, 1000);
+}
+
+// ── Floating golden petals ──
+function spawnPetals() {
+  const emojis = ['✦','·','°','⋆','✧','꩜','❋'];
+  for (let i = 0; i < 22; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'petal';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.top = '-20px';
+      p.style.color = `rgba(232,192,112,${.3 + Math.random() * .5})`;
+      p.style.fontSize = (.6 + Math.random() * 1) + 'rem';
+      p.style.animationDuration = (6 + Math.random() * 8) + 's';
+      p.style.animationDelay = '0s';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 14000);
+    }, i * 180);
+  }
+}
+
+// Allow door click too
+document.getElementById('theDoor').addEventListener('click', handleKnock);
+</script>
+</body>
+</html>
